@@ -10,11 +10,15 @@
   <ItemGroup>
     <None Remove="Allclear.png" />
     <None Remove="Eraser.png" />
+    <None Remove="Load.png" />
+    <None Remove="Save.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Allclear.png" />
     <Resource Include="Eraser.png" />
+    <Resource Include="Load.png" />
+    <Resource Include="Save.png" />
   </ItemGroup>
 
 </Project>

@@ -5,12 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfAppAssignments"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" Background="Transparent">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="55"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <local:ScribblePad x:Name="mScribble" Grid.Column="1" Background="Black"/>
         <Button Height="45" Click="Button_Click"  Margin="0,55,0,0" VerticalAlignment="Top"/>
         <Button Height="45" Click="Button_Click_Erase" Margin="0,110,0,0" VerticalAlignment="Top">
             <Image Source="Eraser.png"/>
@@ -18,14 +19,20 @@
         <Button Height="45" Click="Button_Click_Clear" Margin="0,165,0,0" VerticalAlignment="Top">
             <Image Source="Allclear.png"/>
         </Button>
-        <Canvas Height="45" Width="55" Margin="0,55,0,0" VerticalAlignment="Top">
+        <Button Height="45" Click="Button_Click_Load" Margin="0,220,0,0" VerticalAlignment="Top">
+            <Image Source="Load.png"/>
+        </Button>
+        <Button Height="45" Click="Button_Click_Save" Margin="0,275,0,0" VerticalAlignment="Top">
+            <Image Source="Save.png"/>
+        </Button>
+        <Canvas Height="45" Width="55" Margin="0,55,0,0" VerticalAlignment="Top" Background="Transparent">
             <TextBlock Name="mNThick" Text="{Binding}" Margin="24,27,0,0"/>
             <Ellipse Name="mCircle" HorizontalAlignment="Center" VerticalAlignment="Center"
-            Height="1"
-            Width="1"
-            Canvas.Bottom="24"
-            Canvas.Right="28"
-            Fill="Black"/>
+        Height="1"
+        Width="1"
+        Canvas.Bottom="24"
+        Canvas.Right="28"
+        Fill="Black"/>
         </Canvas>
         <Slider Name="mThick" Height="200" Width="20" Minimum="2" Maximum="10" ValueChanged="mThick_ValueChanged" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left" Orientation="Vertical" Margin="0,55,0,0"/>
         <ComboBox Name="mSelect" SelectedIndex="0" Height= "50" VerticalAlignment="Top" SelectionChanged="mSelect_SelectionChanged">
@@ -46,6 +53,5 @@
             </ComboBoxItem>
         </ComboBox>
 
-        <Canvas Grid.Column="1" Name= "canvas" Background="Black" MouseDown="Canvas_MouseDown" MouseMove="Canvas_MouseMove"/>
     </Grid>
 </Window>
