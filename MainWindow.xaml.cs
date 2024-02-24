@@ -30,30 +30,25 @@ namespace WpfAppAssignments {
             SaveFileDialog saveFile = new ();
             saveFile.Filter = "Text files (*.txt)|*.txt|Binary files (*.bin)|*.bin";
             if (saveFile.ShowDialog () == true) {
-                var ext = System.IO.Path.GetExtension (saveFile.FileName);
-                if (ext is ".txt") {
-                    StreamWriter sw = new (saveFile.FileName, true);
-                    foreach (var points in ScribblePad.mWayPoints) sw.WriteLine (points);
-                    sw.Close ();
-                } else {
-                    BinaryWriter bw = new BinaryWriter (File.Open (saveFile.FileName, FileMode.Append));
-                    foreach (var points in ScribblePad.mWayPoints) {
-                        bw.Write (points.X); bw.Write (points.Y); 
-                    }
-                    bw.Write (double.NaN);
-                    bw.Close ();
-                }
+                mScribble.Save (saveFile.FileName);
             }
         }
-
         private void Button_Click_Load (object sender, RoutedEventArgs e) {
             OpenFileDialog openFileDialog = new ();
             openFileDialog.Filter = "Text files (*.txt)|*.txt|Binary files (*.bin)|*.bin";
             if (openFileDialog.ShowDialog () is true) {
                 var fileName = openFileDialog.FileName;
                 mScribble.Load (fileName);
-                //mScribble.Load (fileName);
             }
+        }
+
+        private void Button_Click_Undo (object sender, RoutedEventArgs e) {
+            mScribble.OnClickUndo ();
+        }
+
+        private void Button_Click_Redo (object sender, RoutedEventArgs e) {
+            mScribble.OnClickRedo ();
         }
     }
 }
+
