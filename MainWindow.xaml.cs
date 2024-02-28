@@ -13,14 +13,15 @@ namespace WpfAppAssignments {
     public partial class MainWindow : Window {
         public MainWindow () {
             InitializeComponent ();
+            Drawing.sType = ShapeType.SCRIBBLE;
         }
 
         private void Button_Click_Erase (object sender, RoutedEventArgs e) {
-            //mScribble.mPen = new (Brushes.Black, mScribble.mPen.Thickness);
+            mScribble.Erase ();
         }
 
         private void Button_Click_Clear (object sender, RoutedEventArgs e) {
-            mScribble.Children.Clear ();
+            mScribble.Clear ();
         }
         private void mSelect_SelectionChanged (object sender, SelectionChangedEventArgs e) {
             mScribble.ColorChange (mSelect.SelectedIndex);
@@ -41,13 +42,36 @@ namespace WpfAppAssignments {
                 mScribble.Load (fileName);
             }
         }
-
         private void Button_Click_Undo (object sender, RoutedEventArgs e) {
             mScribble.OnClickUndo ();
         }
 
         private void Button_Click_Redo (object sender, RoutedEventArgs e) {
             mScribble.OnClickRedo ();
+        }
+
+        private void Button_Click_Line (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.LINE;
+        }
+
+        private void Button_Click_Rect (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.RECTANGLE;
+        }
+
+        private void Button_Click_Scribble (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.SCRIBBLE;
+        }
+
+        private void Button_Click_Ellipse (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.ELLIPSE;
+        }
+
+        private void Button_Click_Circle (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.CIRCLE;
+        }
+
+        private void Button_Click_Pline (object sender, RoutedEventArgs e) {
+            Drawing.sType = ShapeType.PLINES;
         }
     }
 }

@@ -12,7 +12,6 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <local:ScribblePad x:Name="mScribble" Grid.Row="1" Background="Black"/>
-        <Slider Name="mThick" Height="20" Width="200" Minimum="2" Maximum="10" Background="White" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="0,55,0,0"/>
         <StackPanel Orientation="Horizontal">
         <ComboBox Name="mSelect" ToolTip="Brush Color" SelectedIndex="0" Height= "50" HorizontalAlignment="Left" VerticalAlignment="Top" SelectionChanged="mSelect_SelectionChanged">
             <ComboBoxItem Background = "White">
@@ -43,12 +42,31 @@
             <Button Height="45" Click="Button_Click_Save" ToolTip="Save" VerticalAlignment="Top" Margin="0,0,5,0">
                 <Image Source="Save.png"/>
             </Button>
-            <Button Height="45" Click="Button_Click_Undo" ToolTip="Save" VerticalAlignment="Top" Margin="0,0,5,0">
+            <Button Height="45"  Click="Button_Click_Undo" ToolTip="Undo" VerticalAlignment="Top" Margin="0,0,5,0">
                 <Image Source="Undo.png"/>
             </Button>
-            <Button Height="45" Click="Button_Click_Redo" ToolTip="Save" VerticalAlignment="Top" Margin="0,0,5,0">
+            <Button Height="45" Click="Button_Click_Redo" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
                 <Image Source="Redo.png"/>
             </Button>
+            <Button Height="45" Width="50" Click="Button_Click_Scribble" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Scribble
+            </Button>
+            <Button Height="45" Width="50" Click="Button_Click_Line" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Line
+            </Button>
+            <Button Height="45" Width="57" Click="Button_Click_Rect" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Rectangle
+            </Button>
+            <Button Height="45" Width="57" Click="Button_Click_Ellipse" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Ellipse
+            </Button>
+            <Button Height="45" Width="57" Click="Button_Click_Circle" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Circle
+            </Button>
+            <Button Height="45" Width="57" Click="Button_Click_Pline" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
+                Poly line
+            </Button>
+            <!--<Slider Name="mThick" Height="20" Width="200" Minimum="2" Maximum="10" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>-->
         </StackPanel>
     </Grid>
 </Window>
