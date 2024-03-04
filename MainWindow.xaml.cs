@@ -13,7 +13,6 @@ namespace WpfAppAssignments {
     public partial class MainWindow : Window {
         public MainWindow () {
             InitializeComponent ();
-            Drawing.sType = ShapeType.SCRIBBLE;
         }
 
         private void Button_Click_Erase (object sender, RoutedEventArgs e) {
@@ -29,14 +28,14 @@ namespace WpfAppAssignments {
 
         private void Button_Click_Save (object sender, RoutedEventArgs e) {
             SaveFileDialog saveFile = new ();
-            saveFile.Filter = "Text files (*.txt)|*.txt|Binary files (*.bin)|*.bin";
+            saveFile.Filter = "Binary files (*.bin)|*.bin";
             if (saveFile.ShowDialog () == true) {
                 mScribble.Save (saveFile.FileName);
             }
         }
         private void Button_Click_Load (object sender, RoutedEventArgs e) {
             OpenFileDialog openFileDialog = new ();
-            openFileDialog.Filter = "Text files (*.txt)|*.txt|Binary files (*.bin)|*.bin";
+            openFileDialog.Filter = "Binary files (*.bin)|*.bin";
             if (openFileDialog.ShowDialog () is true) {
                 var fileName = openFileDialog.FileName;
                 mScribble.Load (fileName);
@@ -51,27 +50,28 @@ namespace WpfAppAssignments {
         }
 
         private void Button_Click_Line (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.LINE;
+            ScribblePad.mCurrentShape = ShapeType.LINE;
         }
 
         private void Button_Click_Rect (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.RECTANGLE;
+            ScribblePad.mCurrentShape = ShapeType.RECTANGLE;
         }
 
         private void Button_Click_Scribble (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.SCRIBBLE;
+            ScribblePad.mCurrentShape = ShapeType.SCRIBBLE;
         }
 
         private void Button_Click_Ellipse (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.ELLIPSE;
+            ScribblePad.mCurrentShape = ShapeType.ELLIPSE;
+
         }
 
         private void Button_Click_Circle (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.CIRCLE;
+            ScribblePad.mCurrentShape = ShapeType.CIRCLE;
         }
 
         private void Button_Click_Pline (object sender, RoutedEventArgs e) {
-            Drawing.sType = ShapeType.PLINES;
+            ScribblePad.mCurrentShape = ShapeType.PLINES;
         }
     }
 }

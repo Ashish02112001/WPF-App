@@ -1,18 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Windows.Media;
 using System.Windows;
+using System.IO;
+using Brush = System.Windows.Media.Brush;
+using Pen = System.Windows.Media.Pen;
+using Point = System.Windows.Point;
 
 namespace WpfAppAssignments {
     public class Drawing {
-        static public ShapeType sType { get; set; }
+        public ShapeType sType { get; set; }
         public Point Start { get; set; }
         public Point End { get; set; }
         public Pen? currentPen { get; set; }
         public virtual void DrawShape (DrawingContext drawingContext) { }
+
+        public virtual void SaveShape (BinaryWriter bw) {
+            bw.Write ((int)sType);
+            bw.Write (Start.X);
+            bw.Write (Start.Y);
+            bw.Write (End.X);
+            bw.Write (End.Y);
+            var brushConverter = new BrushConverter ();
+            string? brushString = brushConverter.ConvertToString (currentPen.Brush);
+            bw.Write (brushString);
+            bw.Write (currentPen.Thickness);
+            bw.Write ('\n');
+        }
+        public virtual Drawing LoadShape (BinaryReader br) {
+            Start = new Point (br.ReadDouble (), br.ReadDouble ());
+            End = new Point (br.ReadDouble (), br.ReadDouble ());
+            var brushString = br.ReadString ();
+            if (string.IsNullOrEmpty (brushString))
+                brushString = "#FFFFFFFF";
+            var thickness = br.ReadDouble ();
+            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString), thickness);
+            return this;
+        }
     }
     public enum ShapeType {
         SCRIBBLE,
@@ -25,6 +48,7 @@ namespace WpfAppAssignments {
     public class Scribble : Drawing {
         public List<Point> mWayPoints { get; set; }
         public Scribble (Pen pen) {
+            sType = ShapeType.SCRIBBLE;
             currentPen = pen;
             mWayPoints = new ();
         }
@@ -38,9 +62,31 @@ namespace WpfAppAssignments {
                 }
             }
         }
+        public override void SaveShape (BinaryWriter bw) {
+            bw.Write ((int)sType);
+            var brushConverter = new BrushConverter ();
+            string? brushString = brushConverter.ConvertToString (currentPen?.Brush);
+            bw.Write (brushString);
+            bw.Write (currentPen.Thickness);
+            bw.Write (mWayPoints.Count);
+            foreach (var points in mWayPoints) { bw.Write (points.X); bw.Write (points.Y); }
+            bw.Write ('\n');
+        }
+        public override Drawing LoadShape (BinaryReader br) {
+            var brushString = br.ReadString ();
+            if (string.IsNullOrEmpty (brushString))
+                brushString = "#FFFFFFFF";
+            var thickness = br.ReadDouble ();
+            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString), thickness);
+            var a = br.ReadInt32 ();
+            for (int i = 0; i < a; i++)
+                mWayPoints.Add (new Point (br.ReadDouble (), br.ReadDouble ()));
+            return this;
+        }
     }
     public class Rectangle : Drawing {
         public Rectangle (Pen pen) {
+            sType = ShapeType.RECTANGLE;
             currentPen = pen;
         }
         public double Width { get; set; }
@@ -53,6 +99,7 @@ namespace WpfAppAssignments {
     }
     public class Line : Drawing {
         public Line (Pen pen) {
+            sType = ShapeType.LINE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {
@@ -62,6 +109,7 @@ namespace WpfAppAssignments {
     }
     public class Ellipse : Drawing {
         public Ellipse (Pen pen) {
+            sType = ShapeType.ELLIPSE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {
@@ -71,6 +119,7 @@ namespace WpfAppAssignments {
     }
     public class Circle : Drawing {
         public Circle (Pen pen) {
+            sType = ShapeType.CIRCLE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {

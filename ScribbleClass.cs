@@ -1,18 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
-using System.Configuration;
 using System.IO;
-using System.Windows.Media.Imaging;
-using WpfAppAssignments;
-using System.Numerics;
 
 namespace WpfAppAssignments {
     public partial class ScribblePad : Canvas {
@@ -21,7 +13,6 @@ namespace WpfAppAssignments {
         Rectangle? mRectangle;
         Ellipse? mEllipse;
         Circle? mCircle;
-        PolyLines? mPolLines;
         protected override void OnRender (DrawingContext drawingContext) {
             base.OnRender (drawingContext);
             foreach (var drawing in mDrawings) {
@@ -29,61 +20,37 @@ namespace WpfAppAssignments {
             }
         }
         public void Save (string fileName) {
-            var ext = System.IO.Path.GetExtension (fileName);
-            if (ext is ".txt") {
-                StreamWriter sw = new (fileName, true);
-                foreach (Scribble scribble in mDrawings) {
-                    sw.WriteLine ($"{scribble.currentPen?.Brush},{scribble.currentPen?.Thickness}");
-                    foreach (var points in scribble.mWayPoints) sw.WriteLine (points);
-                }
-                sw.Close ();
-            } else {
-                BinaryWriter bw = new (File.Open (fileName, FileMode.Append));
-                foreach (Scribble scribble in mDrawings) {
-                    bw.Write (scribble.currentPen.Brush.ToString ());
-                    bw.Write (scribble.currentPen.Thickness);
-                    foreach (var points in scribble.mWayPoints) { bw.Write (points.X); bw.Write (points.Y); }
-                    bw.Write (double.NaN);
-                }
-                bw.Close ();
-            }
+            BinaryWriter bw = new (File.Open (fileName, FileMode.OpenOrCreate));
+            foreach (Drawing drawing in mDrawings) drawing.SaveShape (bw);
+            bw.Close ();
         }
         public void Load (string fileName) {
-            string ext = Path.GetExtension (fileName);
-            if (ext is ".txt") {
-                string[] points = File.ReadAllLines (fileName);
-                foreach (var point in points) {
-                    string[] pt = point.Split (',');
-                    if (double.TryParse (pt[0], out double x) && double.TryParse (pt[1], out double y)) {
-                        mScribble?.mWayPoints.Add (new Point (x, y));
-                    } else {
-                        var pen = new Pen ((Brush)new BrushConverter ().ConvertFrom (pt[0])!, int.Parse (pt[1]));
-                        mScribble = new (pen);
-                        mDrawings.Add (mScribble);
-                    }
-                }
-            } else {
-                using FileStream fs = new (fileName, FileMode.Open);
-                using BinaryReader br = new (fs);
-                while (br.BaseStream.Position < br.BaseStream.Length) {
-                    for (; ; ) {
-                        if (string.IsNullOrWhiteSpace(br.ToString())) continue;
-                        var color = br.ReadString ();
-                        var thick = br.ReadDouble ();
-                        var pen = new Pen ((Brush)new BrushConverter ().ConvertFrom (color), thick);
-                        mScribble = new (pen);
-                        mDrawings.Add (mScribble);
-                        var X = br.ReadDouble ();
-                        if (double.IsNaN (X)) {
-                            mScribble.mWayPoints.Add (new Point (double.NaN, double.NaN));
-                            break;
-                        }
-                        var Y = br.ReadDouble ();
-                        mScribble.mWayPoints.Add (new Point (X, Y));
-                    }
-                }
+            using FileStream fs = new (fileName, FileMode.Open);
+            using (BinaryReader br = new (fs)) {
+                LoadFromBinary (br);
             }
             InvalidateVisual ();
+        }
+
+        void LoadFromBinary (BinaryReader br) {
+            Drawing? drawing;
+            var mPen = new Pen ();
+            while (true) {
+                if (br.PeekChar () == -1) break;
+                ShapeType shapeType = (ShapeType)br.ReadInt32 ();
+                drawing = shapeType switch {
+                    ShapeType.SCRIBBLE => new Scribble (mPen),
+                    ShapeType.LINE => new Line (mPen),
+                    ShapeType.RECTANGLE => new Rectangle (mPen),
+                    ShapeType.CIRCLE => new Circle (mPen),
+                    ShapeType.ELLIPSE => new Ellipse (mPen),
+                };
+
+                if (drawing == null) break;
+                mDrawings.Add (drawing.LoadShape (br));
+
+                if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar() ;
+            }
         }
         public void ColorChange (int choice) {
             SolidColorBrush color = Brushes.White;
@@ -116,28 +83,17 @@ namespace WpfAppAssignments {
                 InvalidateVisual ();
             }
         }
-        protected override void OnPreviewMouseLeftButtonDown (MouseButtonEventArgs e) {
-            base.OnPreviewMouseLeftButtonDown (e);
-            switch (Drawing.sType) {
-                case ShapeType.PLINES:
-                    mIsDrawing = true;
-                    mPolLines = new (new Pen (mColor, 2));
-                    mPolLines.Start = mStartPoint;
-                    mDrawings.Add (mPolLines);
-                    //if (mPolLines.Start == mPolLines.End) mIsDrawing = false;
-                    break;
-            }
-        }
+
         protected override void OnMouseDown (MouseButtonEventArgs e) {
             base.OnMouseDown (e);
             if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
                 mStartPoint = e.GetPosition (this);
-                switch (Drawing.sType) {
+                switch (mCurrentShape) {
                     case ShapeType.LINE:
                         mLine = new (new Pen (mColor, 2));
                         mLine.Start = mStartPoint;
-                        mDrawings.Add(mLine);
+                        mDrawings.Add (mLine);
                         break;
                     case ShapeType.SCRIBBLE:
                         mScribble = new (new Pen (mColor, 2));
@@ -146,7 +102,7 @@ namespace WpfAppAssignments {
                     case ShapeType.RECTANGLE:
                         mRectangle = new (new Pen (mColor, 2));
                         mRectangle.Start = mStartPoint;
-                        mDrawings.Add (mRectangle);break;
+                        mDrawings.Add (mRectangle); break;
                     case ShapeType.ELLIPSE:
                         mEllipse = new (new Pen (mColor, 2));
                         mEllipse.Start = mStartPoint;
@@ -162,21 +118,21 @@ namespace WpfAppAssignments {
             base.OnMouseMove (e);
             mEndPoint = e.GetPosition (this);
             if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
-                switch (Drawing.sType) {
+                switch (mCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEndPoint;
                         break;
                     case ShapeType.SCRIBBLE: {
-                        mScribble?.AddWayPoints (mEndPoint);
-                        break;
-                    }
+                            mScribble?.AddWayPoints (mEndPoint);
+                            break;
+                        }
                     case ShapeType.RECTANGLE:
                         mRectangle.End = mEndPoint;
                         break;
                     case ShapeType.ELLIPSE:
-                        var X = Math.Abs(mStartPoint.X - mEndPoint.X);
-                        var Y = Math.Abs(mStartPoint.Y - mEndPoint.Y);
-                        mEllipse.End = new Point(X,Y);
+                        var X = Math.Abs (mStartPoint.X - mEndPoint.X);
+                        var Y = Math.Abs (mStartPoint.Y - mEndPoint.Y);
+                        mEllipse.End = new Point (X, Y);
                         break;
                     case ShapeType.CIRCLE:
                         X = Math.Abs (mStartPoint.X - mEndPoint.X);
@@ -186,25 +142,18 @@ namespace WpfAppAssignments {
                 mRedoStack.Clear ();
                 InvalidateVisual ();
             }
-            if (mIsDrawing && e.LeftButton == MouseButtonState.Released) {
-                switch (Drawing.sType) {
-                    case ShapeType.PLINES:
-                        mPolLines.End = mEndPoint;
-                        break;
-                }
-            }
         }
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
             if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
                 mIsDrawing = false;
-                switch (Drawing.sType) {
+                switch (mCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEndPoint;
                         break;
                     case ShapeType.SCRIBBLE: {
-                        break;
-                    }
+                            break;
+                        }
                     case ShapeType.RECTANGLE:
                         break;
                 }
@@ -215,6 +164,6 @@ namespace WpfAppAssignments {
         Point mStartPoint, mEndPoint;
         static public List<Drawing> mDrawings = new ();
         Stack<Drawing> mRedoStack = new ();
+        static public ShapeType mCurrentShape = ShapeType.SCRIBBLE;
     }
-    
 }
