@@ -128,12 +128,50 @@ namespace WpfAppAssignments {
         }
     }
     public class PolyLines : Drawing {
+        public List<PolyLines> mLinesColl { get; set; }
+        bool mLoad = false;
         public PolyLines (Pen pen) {
+            sType = ShapeType.PLINES;
             currentPen = pen;
+            mLinesColl = new ();
         }
         public override void DrawShape (DrawingContext drawingContext) {
             base.DrawShape (drawingContext);
             drawingContext.DrawLine (currentPen, Start, End);
+            if (mLoad) {
+                foreach (var lines in mLinesColl) {
+                    drawingContext.DrawLine (currentPen, lines.Start, lines.End);
+                }
+            }
+        }
+        public override void SaveShape (BinaryWriter bw) {
+            bw.Write ((int)sType);
+            var brushConverter = new BrushConverter ();
+            string? brushString = brushConverter.ConvertToString (currentPen?.Brush);
+            bw.Write (brushString);
+            bw.Write (currentPen.Thickness);
+            bw.Write (mLinesColl.Count);
+            foreach (var line in mLinesColl) { 
+                bw.Write (line.Start.X);
+                bw.Write (line.Start.Y);
+                bw.Write (line.End.X);
+                bw.Write (line.End.Y);
+            }
+            bw.Write ('\n');
+        }
+        public override Drawing LoadShape (BinaryReader br) {
+            var brushString = br.ReadString ();
+            if (string.IsNullOrEmpty (brushString))
+                brushString = "#FFFFFFFF";
+            var thickness = br.ReadDouble ();
+            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString), thickness);
+            var cnt = br.ReadInt32 ();
+            PolyLines newPolLine = new PolyLines (currentPen);
+            newPolLine.Start = new Point (br.ReadDouble (), br.ReadDouble ());
+            newPolLine.End = new Point (br.ReadDouble (), br.ReadDouble ());
+            mLinesColl.Add (newPolLine);
+            mLoad = true;
+            return this;
         }
     }
 }

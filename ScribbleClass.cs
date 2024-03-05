@@ -5,6 +5,8 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
 using System.IO;
+using System.Diagnostics.Eventing.Reader;
+using System.Windows.Shapes;
 
 namespace WpfAppAssignments {
     public partial class ScribblePad : Canvas {
@@ -13,6 +15,7 @@ namespace WpfAppAssignments {
         Rectangle? mRectangle;
         Ellipse? mEllipse;
         Circle? mCircle;
+        PolyLines? mPolyLines;
         protected override void OnRender (DrawingContext drawingContext) {
             base.OnRender (drawingContext);
             foreach (var drawing in mDrawings) {
@@ -44,12 +47,12 @@ namespace WpfAppAssignments {
                     ShapeType.RECTANGLE => new Rectangle (mPen),
                     ShapeType.CIRCLE => new Circle (mPen),
                     ShapeType.ELLIPSE => new Ellipse (mPen),
+                    ShapeType.PLINES => new PolyLines (mPen),
                 };
-
                 if (drawing == null) break;
                 mDrawings.Add (drawing.LoadShape (br));
 
-                if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar() ;
+                if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
             }
         }
         public void ColorChange (int choice) {
@@ -86,74 +89,93 @@ namespace WpfAppAssignments {
 
         protected override void OnMouseDown (MouseButtonEventArgs e) {
             base.OnMouseDown (e);
-            if (e.ButtonState == MouseButtonState.Pressed) {
+            mStart = e.GetPosition (this);
+            Pen pen = new (mColor, 2);
+            if (mCurrentShape is ShapeType.PLINES && e.RightButton is not MouseButtonState.Pressed) {
+                if (!mIsDrawing) {
+                    mPolyLines = new (pen);
+                    mIsDrawing = true;
+                    mPolyLines.Start = mStart;
+                } else {
+                    mPolyLines.End = mStart;
+                    mPolyLines = new (pen);
+                    mPolyLines.Start = mStart;
+                }
+                mPolyLines.mLinesColl.Add (mPolyLines);
+                mDrawings.Add (mPolyLines);
+            } else if (mCurrentShape is ShapeType.PLINES && e.RightButton is MouseButtonState.Pressed) {
+                mIsDrawing = false;
+                mDrawings.Remove (mDrawings[^1]);
+                InvalidateVisual ();
+            } else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
-                mStartPoint = e.GetPosition (this);
                 switch (mCurrentShape) {
                     case ShapeType.LINE:
-                        mLine = new (new Pen (mColor, 2));
-                        mLine.Start = mStartPoint;
+                        mLine = new (pen);
+                        mLine.Start = mStart;
                         mDrawings.Add (mLine);
                         break;
                     case ShapeType.SCRIBBLE:
-                        mScribble = new (new Pen (mColor, 2));
-                        mScribble?.AddWayPoints (mStartPoint);
+                        mScribble = new (pen);
+                        mScribble?.AddWayPoints (mStart);
                         mDrawings.Add (mScribble); break;
                     case ShapeType.RECTANGLE:
-                        mRectangle = new (new Pen (mColor, 2));
-                        mRectangle.Start = mStartPoint;
+                        mRectangle = new (pen);
+                        mRectangle.Start = mStart;
                         mDrawings.Add (mRectangle); break;
                     case ShapeType.ELLIPSE:
-                        mEllipse = new (new Pen (mColor, 2));
-                        mEllipse.Start = mStartPoint;
+                        mEllipse = new (pen);
+                        mEllipse.Start = mStart;
                         mDrawings.Add (mEllipse); break;
                     case ShapeType.CIRCLE:
-                        mCircle = new (new Pen (mColor, 2));
-                        mCircle.Start = mStartPoint;
+                        mCircle = new (pen);
+                        mCircle.Start = mStart;
                         mDrawings.Add (mCircle); break;
                 }
             }
         }
         protected override void OnMouseMove (MouseEventArgs e) {
             base.OnMouseMove (e);
-            mEndPoint = e.GetPosition (this);
-            if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
+            mEnd = e.GetPosition (this);
+            if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
+                mPolyLines.End = mEnd;
+            } else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 switch (mCurrentShape) {
                     case ShapeType.LINE:
-                        mLine.End = mEndPoint;
+                        mLine.End = mEnd;
                         break;
-                    case ShapeType.SCRIBBLE: {
-                            mScribble?.AddWayPoints (mEndPoint);
-                            break;
-                        }
+                    case ShapeType.SCRIBBLE:
+                        mScribble?.AddWayPoints (mEnd);
+                        break;
                     case ShapeType.RECTANGLE:
-                        mRectangle.End = mEndPoint;
+                        mRectangle.End = mEnd;
                         break;
                     case ShapeType.ELLIPSE:
-                        var X = Math.Abs (mStartPoint.X - mEndPoint.X);
-                        var Y = Math.Abs (mStartPoint.Y - mEndPoint.Y);
+                        var X = Math.Abs (mStart.X - mEnd.X);
+                        var Y = Math.Abs (mStart.Y - mEnd.Y);
                         mEllipse.End = new Point (X, Y);
                         break;
                     case ShapeType.CIRCLE:
-                        X = Math.Abs (mStartPoint.X - mEndPoint.X);
+                        X = Math.Abs (mStart.X - mEnd.X);
                         mCircle.End = new Point (X, X);
                         break;
                 }
-                mRedoStack.Clear ();
-                InvalidateVisual ();
             }
+            mRedoStack.Clear ();
+            InvalidateVisual ();
         }
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
-            if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
+            if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
+                mPolyLines.End = mEnd;
+            } else if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
                 mIsDrawing = false;
                 switch (mCurrentShape) {
                     case ShapeType.LINE:
-                        mLine.End = mEndPoint;
+                        mLine.End = mEnd;
                         break;
-                    case ShapeType.SCRIBBLE: {
-                            break;
-                        }
+                    case ShapeType.SCRIBBLE:
+                        break;
                     case ShapeType.RECTANGLE:
                         break;
                 }
@@ -161,7 +183,7 @@ namespace WpfAppAssignments {
         }
         bool mIsDrawing = false;
         SolidColorBrush? mColor;
-        Point mStartPoint, mEndPoint;
+        Point mStart, mEnd;
         static public List<Drawing> mDrawings = new ();
         Stack<Drawing> mRedoStack = new ();
         static public ShapeType mCurrentShape = ShapeType.SCRIBBLE;
