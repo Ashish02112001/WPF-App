@@ -48,6 +48,7 @@ namespace WpfAppAssignments {
                     ShapeType.CIRCLE => new Circle (mPen),
                     ShapeType.ELLIPSE => new Ellipse (mPen),
                     ShapeType.PLINES => new PolyLines (mPen),
+                    _ => null
                 };
                 if (drawing == null) break;
                 mDrawings.Add (drawing.LoadShape (br));
@@ -96,16 +97,16 @@ namespace WpfAppAssignments {
                     mPolyLines = new (pen);
                     mIsDrawing = true;
                     mPolyLines.Start = mStart;
-                } else {
-                    mPolyLines.End = mStart;
+                }
+                else {
+                    if (mPolyLines != null) mPolyLines.End = mStart;
                     mPolyLines = new (pen);
                     mPolyLines.Start = mStart;
                 }
-                mPolyLines.mLinesColl.Add (mPolyLines);
                 mDrawings.Add (mPolyLines);
             } else if (mCurrentShape is ShapeType.PLINES && e.RightButton is MouseButtonState.Pressed) {
+                if (mIsDrawing) mDrawings.Remove (mDrawings[^1]);
                 mIsDrawing = false;
-                mDrawings.Remove (mDrawings[^1]);
                 InvalidateVisual ();
             } else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
@@ -117,8 +118,10 @@ namespace WpfAppAssignments {
                         break;
                     case ShapeType.SCRIBBLE:
                         mScribble = new (pen);
-                        mScribble?.AddWayPoints (mStart);
-                        mDrawings.Add (mScribble); break;
+                        if (mScribble != null) {
+                            mScribble.AddWayPoints (mStart);
+                            mDrawings.Add (mScribble);
+                        } break;
                     case ShapeType.RECTANGLE:
                         mRectangle = new (pen);
                         mRectangle.Start = mStart;
@@ -138,8 +141,9 @@ namespace WpfAppAssignments {
             base.OnMouseMove (e);
             mEnd = e.GetPosition (this);
             if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
-                mPolyLines.End = mEnd;
-            } else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
+                if (mPolyLines != null) mPolyLines.End = mEnd;
+            }
+            else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 switch (mCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEnd;
@@ -167,16 +171,13 @@ namespace WpfAppAssignments {
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
             if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
-                mPolyLines.End = mEnd;
-            } else if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
+                if (mPolyLines != null) mPolyLines.End = mEnd;
+            }
+            else if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
                 mIsDrawing = false;
                 switch (mCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEnd;
-                        break;
-                    case ShapeType.SCRIBBLE:
-                        break;
-                    case ShapeType.RECTANGLE:
                         break;
                 }
             }

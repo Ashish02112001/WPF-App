@@ -66,7 +66,6 @@
             <Button Height="45" Width="57" Click="Button_Click_Pline" ToolTip="Redo" VerticalAlignment="Top" Margin="0,0,5,0">
                 Poly Line
             </Button>
-            <!--<Slider Name="mThick" Height="20" Width="200" Minimum="2" Maximum="10" Background="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>-->
         </StackPanel>
     </Grid>
 </Window>
