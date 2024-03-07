@@ -5,10 +5,9 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
 using System.IO;
-using System.Diagnostics.Eventing.Reader;
-using System.Windows.Shapes;
 
 namespace WpfAppAssignments {
+    #region Class ScribblePad ---------------------------------------------------------------------
     public partial class ScribblePad : Canvas {
         Line? mLine;
         Scribble? mScribble;
@@ -18,19 +17,22 @@ namespace WpfAppAssignments {
         PolyLines? mPolyLines;
         protected override void OnRender (DrawingContext drawingContext) {
             base.OnRender (drawingContext);
-            foreach (var drawing in mDrawings) {
+            foreach (var drawing in sDrawings) {
                 drawing.DrawShape (drawingContext);
             }
         }
+        #region Methods ---------------------------------------------
         public void Save (string fileName) {
             BinaryWriter bw = new (File.Open (fileName, FileMode.OpenOrCreate));
-            foreach (Drawing drawing in mDrawings) drawing.SaveShape (bw);
+            foreach (Drawing drawing in sDrawings) drawing.SaveShape (bw);
             bw.Close ();
         }
         public void Load (string fileName) {
             using FileStream fs = new (fileName, FileMode.Open);
             using (BinaryReader br = new (fs)) {
                 LoadFromBinary (br);
+                isLoaded = true;
+                loadCnt = sDrawings.Count;
             }
             InvalidateVisual ();
         }
@@ -51,8 +53,7 @@ namespace WpfAppAssignments {
                     _ => null
                 };
                 if (drawing == null) break;
-                mDrawings.Add (drawing.LoadShape (br));
-
+                sDrawings.Add (drawing.LoadShape (br));
                 if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
             }
         }
@@ -71,28 +72,31 @@ namespace WpfAppAssignments {
             mColor = Brushes.Black;
         }
         public void Clear () {
-            mDrawings.Clear ();
+            sDrawings.Clear ();
             InvalidateVisual ();
         }
         public void OnClickUndo () {
-            if (mDrawings.Count > 0) {
-                mRedoStack.Push (mDrawings[^1]);
-                mDrawings.Remove (mDrawings[^1]);
+            if (sDrawings.Count > 0) {
+                if (isLoaded && sDrawings.Count == loadCnt) return;
+                mRedoStack.Push (sDrawings[^1]);
+                sDrawings.Remove (sDrawings[^1]);
                 InvalidateVisual ();
             }
         }
         public void OnClickRedo () {
             if (mRedoStack.Count > 0) {
-                mDrawings.Add (mRedoStack.Pop ());
+                sDrawings.Add (mRedoStack.Pop ());
                 InvalidateVisual ();
             }
         }
+        #endregion
 
+        #region MouseEvents -----------------------------------------
         protected override void OnMouseDown (MouseButtonEventArgs e) {
             base.OnMouseDown (e);
             mStart = e.GetPosition (this);
             Pen pen = new (mColor, 2);
-            if (mCurrentShape is ShapeType.PLINES && e.RightButton is not MouseButtonState.Pressed) {
+            if (sCurrentShape == ShapeType.PLINES && e.RightButton != MouseButtonState.Pressed) {
                 if (!mIsDrawing) {
                     mPolyLines = new (pen);
                     mIsDrawing = true;
@@ -103,48 +107,49 @@ namespace WpfAppAssignments {
                     mPolyLines = new (pen);
                     mPolyLines.Start = mStart;
                 }
-                mDrawings.Add (mPolyLines);
-            } else if (mCurrentShape is ShapeType.PLINES && e.RightButton is MouseButtonState.Pressed) {
-                if (mIsDrawing) mDrawings.Remove (mDrawings[^1]);
+                sDrawings.Add (mPolyLines);
+            } else if (sCurrentShape == ShapeType.PLINES && e.RightButton == MouseButtonState.Pressed) {
+                if (mIsDrawing) sDrawings.Remove (sDrawings[^1]);
                 mIsDrawing = false;
                 InvalidateVisual ();
             } else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
-                switch (mCurrentShape) {
+                switch (sCurrentShape) {
                     case ShapeType.LINE:
                         mLine = new (pen);
                         mLine.Start = mStart;
-                        mDrawings.Add (mLine);
+                        sDrawings.Add (mLine);
                         break;
                     case ShapeType.SCRIBBLE:
                         mScribble = new (pen);
                         if (mScribble != null) {
                             mScribble.AddWayPoints (mStart);
-                            mDrawings.Add (mScribble);
-                        } break;
+                            sDrawings.Add (mScribble);
+                        }
+                        break;
                     case ShapeType.RECTANGLE:
                         mRectangle = new (pen);
                         mRectangle.Start = mStart;
-                        mDrawings.Add (mRectangle); break;
+                        sDrawings.Add (mRectangle); break;
                     case ShapeType.ELLIPSE:
                         mEllipse = new (pen);
                         mEllipse.Start = mStart;
-                        mDrawings.Add (mEllipse); break;
+                        sDrawings.Add (mEllipse); break;
                     case ShapeType.CIRCLE:
                         mCircle = new (pen);
                         mCircle.Start = mStart;
-                        mDrawings.Add (mCircle); break;
+                        sDrawings.Add (mCircle); break;
                 }
             }
         }
         protected override void OnMouseMove (MouseEventArgs e) {
             base.OnMouseMove (e);
             mEnd = e.GetPosition (this);
-            if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
+            if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (mPolyLines != null) mPolyLines.End = mEnd;
             }
             else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
-                switch (mCurrentShape) {
+                switch (sCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEnd;
                         break;
@@ -170,23 +175,29 @@ namespace WpfAppAssignments {
         }
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
-            if (mCurrentShape is ShapeType.PLINES && mIsDrawing && e.RightButton is not MouseButtonState.Pressed) {
+            if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (mPolyLines != null) mPolyLines.End = mEnd;
             }
             else if (e.LeftButton == MouseButtonState.Released && mIsDrawing) {
                 mIsDrawing = false;
-                switch (mCurrentShape) {
+                switch (sCurrentShape) {
                     case ShapeType.LINE:
                         mLine.End = mEnd;
                         break;
                 }
             }
         }
-        bool mIsDrawing = false;
+        #endregion
+
+        #region Fields ----------------------------------------------
+        bool mIsDrawing = false, isLoaded = false;
+        int loadCnt;
         SolidColorBrush? mColor;
         Point mStart, mEnd;
-        static public List<Drawing> mDrawings = new ();
+        static public List<Drawing> sDrawings = new ();
         Stack<Drawing> mRedoStack = new ();
-        static public ShapeType mCurrentShape = ShapeType.SCRIBBLE;
+        static public ShapeType sCurrentShape = ShapeType.SCRIBBLE;
+        #endregion
     }
+    #endregion
 }

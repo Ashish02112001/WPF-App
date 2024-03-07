@@ -7,22 +7,19 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Allclear.png" />
-    <None Remove="Eraser.png" />
-    <None Remove="Load.png" />
-    <None Remove="Redo.png" />
-    <None Remove="Save.png" />
-    <None Remove="Undo.png" />
-  </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Allclear.png" />
-    <Resource Include="Eraser.png" />
-    <Resource Include="Load.png" />
-    <Resource Include="Redo.png" />
-    <Resource Include="Save.png" />
-    <Resource Include="Undo.png" />
+    <Resource Include="Icons\Allclear.png" />
+    <Resource Include="Icons\Circle.png" />
+    <Resource Include="Icons\doodle.png" />
+    <Resource Include="Icons\Ellipse.png" />
+    <Resource Include="Icons\Line.png" />
+    <Resource Include="Icons\Load.png" />
+    <Resource Include="Icons\Polyline.png" />
+    <Resource Include="Icons\Rectangle.png" />
+    <Resource Include="Icons\Redo.png" />
+    <Resource Include="Icons\Save.png" />
+    <Resource Include="Icons\Undo.png" />
   </ItemGroup>
 
 </Project>
