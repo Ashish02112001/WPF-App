@@ -64,9 +64,6 @@ namespace WpfAppAssignments {
             }
             mColor = color;
         }
-        public void Erase () {
-            mColor = Brushes.Black;
-        }
         public void Clear () {
             sDrawings.Clear ();
             InvalidateVisual ();
@@ -112,6 +109,8 @@ namespace WpfAppAssignments {
                 switch (sCurrentShape) {
                     case ShapeType.LINE:
                         draw = new Line (pen);
+                        draw.Start = mStart;
+                        sDrawings.Add (draw);
                         break;
                     case ShapeType.SCRIBBLE:
                         mScribble = new (pen);
@@ -122,15 +121,21 @@ namespace WpfAppAssignments {
                         break;
                     case ShapeType.RECTANGLE:
                         draw = new Rectangle (pen);
+                        draw.Start = mStart;
+                        sDrawings.Add (draw);
                         break;
                     case ShapeType.ELLIPSE:
                         draw = new Ellipse (pen);
+                        draw.Start = mStart;
+                        sDrawings.Add (draw);
                         break;
                     case ShapeType.CIRCLE:
                         draw = new Circle (pen);
+                        draw.Start = mStart;
+                        sDrawings.Add (draw);
                         break;
                 }
-                if (draw != null) { sDrawings.Add (draw); draw.Start = mStart; }
+                //if (draw != null) { sDrawings.Add (draw); }
             }
         }
         protected override void OnMouseMove (MouseEventArgs e) {
