@@ -36,7 +36,7 @@ namespace WpfAppAssignments {
             if (string.IsNullOrEmpty (brushString))
                 brushString = "#FFFFFFFF";
             var thickness = br.ReadDouble ();
-            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString), thickness);
+            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString)!, thickness);
             return this;
         }
     }
@@ -83,7 +83,7 @@ namespace WpfAppAssignments {
             if (string.IsNullOrEmpty (brushString))
                 brushString = "#FFFFFFFF";
             var thickness = br.ReadDouble ();
-            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString), thickness);
+            currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString)!, thickness);
             var a = br.ReadInt32 ();
             for (int i = 0; i < a; i++)
                 mWayPoints.Add (new Point (br.ReadDouble (), br.ReadDouble ()));
