@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Win32;
 
 namespace WpfAppAssignments {
@@ -22,20 +23,13 @@ namespace WpfAppAssignments {
         }
 
         private void ButtonLoad (object sender, RoutedEventArgs e) {
-            OpenFileDialog openFileDialog = new ();
-            openFileDialog.Filter = "Binary files (*.bin)|*.bin";
-            if (openFileDialog.ShowDialog () is true) {
-                var fileName = openFileDialog.FileName;
-                mScribble.Load (fileName);
-            }
+            mScribble.Load ();
+            
         }
 
         private void ButtonSave (object sender, RoutedEventArgs e) {
-            SaveFileDialog saveFile = new ();
-            saveFile.Filter = "Binary files (*.bin)|*.bin";
-            if (saveFile.ShowDialog () == true) {
-                mScribble.Save (saveFile.FileName);
-            }
+            mScribble.Save ();
+            
         }
        
         private void ButtonUndo (object sender, RoutedEventArgs e) {

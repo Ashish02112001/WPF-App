@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
 using System.IO;
+using Microsoft.Win32;
 
 namespace WpfAppAssignments {
     #region Class ScribblePad ---------------------------------------------------------------------
@@ -18,40 +19,50 @@ namespace WpfAppAssignments {
             }
         }
         #region Methods ---------------------------------------------
-        public void Save (string fileName) {
-            BinaryWriter bw = new (File.Open (fileName, FileMode.OpenOrCreate));
-            foreach (Drawing drawing in sDrawings) drawing.SaveShape (bw);
-            bw.Close ();
-        }
-        public void Load (string fileName) {
-            using FileStream fs = new (fileName, FileMode.Open);
-            using (BinaryReader br = new (fs)) {
-                LoadFromBinary (br);
-                isLoaded = true;
-                loadCnt = sDrawings.Count;
+        public void Save () {
+            SaveFileDialog saveFile = new ();
+            saveFile.Filter = "Binary files (*.bin)|*.bin";
+            if (saveFile.ShowDialog () == true) {
+                BinaryWriter bw = new (File.Open (saveFile.FileName, FileMode.OpenOrCreate));
+                foreach (Drawing drawing in sDrawings) drawing.SaveShape (bw);
+                bw.Close ();
             }
-            InvalidateVisual ();
         }
+        public void Load () {
+            OpenFileDialog openFileDialog = new ();
+            openFileDialog.Filter = "Binary files (*.bin)|*.bin";
+            if (openFileDialog.ShowDialog () is true) {
+                var fileName = openFileDialog.FileName;
+                using FileStream fs = new (fileName, FileMode.Open);
+                using (BinaryReader br = new (fs)) {
+                    var mPen = new Pen ();
+                    while (true) {
+                        if (br.PeekChar () == -1) break;
+                        ShapeType shapeType = (ShapeType)br.ReadInt32 ();
+                        draw = CreateShape (shapeType, mPen);
+                        if (draw == null) break;
+                        sDrawings.Add (draw.LoadShape (br));
+                        if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
+                    }
+                    isLoaded = true;
+                    loadCnt = sDrawings.Count;
+                }
+                InvalidateVisual ();
+            }
 
-        void LoadFromBinary (BinaryReader br) {
-            Drawing? drawing;
-            var mPen = new Pen ();
-            while (true) {
-                if (br.PeekChar () == -1) break;
-                ShapeType shapeType = (ShapeType)br.ReadInt32 ();
-                drawing = shapeType switch {
-                    ShapeType.SCRIBBLE => new Scribble (mPen),
-                    ShapeType.LINE => new Line (mPen),
-                    ShapeType.RECTANGLE => new Rectangle (mPen),
-                    ShapeType.CIRCLE => new Circle (mPen),
-                    ShapeType.ELLIPSE => new Ellipse (mPen),
-                    ShapeType.PLINES => new PolyLines (mPen),
-                    _ => null
-                };
-                if (drawing == null) break;
-                sDrawings.Add (drawing.LoadShape (br));
-                if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
-            }
+        }
+        
+        Drawing CreateShape (ShapeType st, Pen mPen) {
+            draw = st switch {
+                ShapeType.SCRIBBLE => new Scribble (mPen),
+                ShapeType.LINE => new Line (mPen),
+                ShapeType.RECTANGLE => new Rectangle (mPen),
+                ShapeType.CIRCLE => new Circle (mPen),
+                ShapeType.ELLIPSE => new Ellipse (mPen),
+                ShapeType.PLINES => new PolyLines (mPen),
+                _ => null
+            };
+            return draw;
         }
         public void ColorChange (int choice) {
             SolidColorBrush color = Brushes.White;
@@ -62,7 +73,7 @@ namespace WpfAppAssignments {
                 case 3: color = Brushes.Red; break;
                 case 4: color = Brushes.Yellow; break;
             }
-            mColor = color;
+            sColor = color;
         }
         public void Clear () {
             sDrawings.Clear ();
@@ -88,13 +99,12 @@ namespace WpfAppAssignments {
         protected override void OnMouseDown (MouseButtonEventArgs e) {
             base.OnMouseDown (e);
             mStart = e.GetPosition (this);
-            Pen pen = new (mColor, 2);
+            Pen pen = new (sColor, 2);
             if (sCurrentShape == ShapeType.PLINES && e.RightButton != MouseButtonState.Pressed) {
                 if (!mIsDrawing) {
                     mIsDrawing = true;
                     draw = new PolyLines (pen);
-                }
-                else {
+                } else {
                     if (draw != null) draw.End = mStart;
                     draw = new PolyLines (pen);
                 }
@@ -135,7 +145,6 @@ namespace WpfAppAssignments {
                         sDrawings.Add (draw);
                         break;
                 }
-                //if (draw != null) { sDrawings.Add (draw); }
             }
         }
         protected override void OnMouseMove (MouseEventArgs e) {
@@ -143,8 +152,7 @@ namespace WpfAppAssignments {
             mEnd = e.GetPosition (this);
             if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
-            }
-            else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
+            } else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 if (sCurrentShape is ShapeType.SCRIBBLE) mScribble?.AddWayPoints (mEnd);
                 else if (draw != null) {
                     switch (sCurrentShape) {
@@ -173,14 +181,9 @@ namespace WpfAppAssignments {
         protected override void OnMouseUp (MouseButtonEventArgs e) {
             if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
-            }
-            else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
+            } else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
                 mIsDrawing = false;
-                switch (sCurrentShape) {
-                    case ShapeType.LINE:
-                        draw.End = mEnd;
-                        break;
-                }
+                if (sCurrentShape == ShapeType.LINE) draw.End = mEnd;
             }
         }
         #endregion
@@ -188,7 +191,7 @@ namespace WpfAppAssignments {
         #region Fields ----------------------------------------------
         bool mIsDrawing = false, isLoaded = false;
         int loadCnt;
-        SolidColorBrush? mColor;
+        static public SolidColorBrush? sColor = Brushes.White;
         Point mStart, mEnd;
         static public List<Drawing> sDrawings = new ();
         Stack<Drawing> mRedoStack = new ();

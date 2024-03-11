@@ -86,7 +86,7 @@ namespace WpfAppAssignments {
             currentPen = new Pen ((Brush)new BrushConverter ().ConvertFrom (brushString)!, thickness);
             var a = br.ReadInt32 ();
             for (int i = 0; i < a; i++)
-                mWayPoints.Add (new Point (br.ReadDouble (), br.ReadDouble ()));
+                AddWayPoints (new Point (br.ReadDouble (), br.ReadDouble ()));
             return this;
         }
     }

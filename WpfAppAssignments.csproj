@@ -7,6 +7,10 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Icons\Green.png" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <Resource Include="Icons\Allclear.png" />
