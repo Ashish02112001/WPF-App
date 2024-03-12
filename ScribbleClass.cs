@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.IO;
 using Microsoft.Win32;
-
 namespace WpfAppAssignments {
     #region Class ScribblePad ---------------------------------------------------------------------
     public partial class ScribblePad : Canvas {
@@ -60,7 +59,7 @@ namespace WpfAppAssignments {
                 ShapeType.CIRCLE => new Circle (mPen),
                 ShapeType.ELLIPSE => new Ellipse (mPen),
                 ShapeType.PLINES => new PolyLines (mPen),
-                _ => null
+                _ => new Scribble (mPen)
             };
             return draw;
         }
@@ -110,40 +109,24 @@ namespace WpfAppAssignments {
                 }
                 draw.Start = mStart;
                 sDrawings.Add (draw);
-            } else if (sCurrentShape == ShapeType.PLINES && e.RightButton == MouseButtonState.Pressed) {
+            }
+            else if (sCurrentShape == ShapeType.PLINES && e.RightButton == MouseButtonState.Pressed) {
                 if (mIsDrawing) sDrawings.Remove (sDrawings[^1]);
                 mIsDrawing = false;
                 InvalidateVisual ();
-            } else if (e.ButtonState == MouseButtonState.Pressed) {
+            }
+            else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
-                switch (sCurrentShape) {
-                    case ShapeType.LINE:
-                        draw = new Line (pen);
-                        draw.Start = mStart;
-                        sDrawings.Add (draw);
-                        break;
-                    case ShapeType.SCRIBBLE:
-                        mScribble = new (pen);
-                        if (mScribble != null) {
-                            mScribble.AddWayPoints (mStart);
-                            sDrawings.Add (mScribble);
-                        }
-                        break;
-                    case ShapeType.RECTANGLE:
-                        draw = new Rectangle (pen);
-                        draw.Start = mStart;
-                        sDrawings.Add (draw);
-                        break;
-                    case ShapeType.ELLIPSE:
-                        draw = new Ellipse (pen);
-                        draw.Start = mStart;
-                        sDrawings.Add (draw);
-                        break;
-                    case ShapeType.CIRCLE:
-                        draw = new Circle (pen);
-                        draw.Start = mStart;
-                        sDrawings.Add (draw);
-                        break;
+                if (sCurrentShape is ShapeType.SCRIBBLE) {
+                    mScribble = new (pen);
+                    draw = null;
+                    mScribble.AddWayPoints (mStart);
+                    sDrawings.Add (mScribble);
+                }
+                else {
+                    draw = CreateShape (sCurrentShape, pen);
+                    draw.Start = mStart;
+                    sDrawings.Add (draw);
                 }
             }
         }
@@ -152,26 +135,14 @@ namespace WpfAppAssignments {
             mEnd = e.GetPosition (this);
             if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
-            } else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
+            }
+            else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 if (sCurrentShape is ShapeType.SCRIBBLE) mScribble?.AddWayPoints (mEnd);
                 else if (draw != null) {
-                    switch (sCurrentShape) {
-                        case ShapeType.LINE:
-                            draw.End = mEnd;
-                            break;
-                        case ShapeType.RECTANGLE:
-                            draw.End = mEnd;
-                            break;
-                        case ShapeType.ELLIPSE:
-                            var X = Math.Abs (mStart.X - mEnd.X);
-                            var Y = Math.Abs (mStart.Y - mEnd.Y);
-                            draw.End = new Point (X, Y);
-                            break;
-                        case ShapeType.CIRCLE:
-                            X = Math.Abs (mStart.X - mEnd.X);
-                            draw.End = new Point (X, X);
-                            break;
-                    }
+                    var X = Math.Abs (mStart.X - mEnd.X);
+                    var Y = Math.Abs (mStart.Y - mEnd.Y);
+                    draw.End = (sCurrentShape is ShapeType.ELLIPSE) ? new Point (X, Y) :
+                        (sCurrentShape is ShapeType.CIRCLE ? new Point (X,X) : mEnd);
                 }
             }
             mRedoStack.Clear ();
@@ -181,7 +152,8 @@ namespace WpfAppAssignments {
         protected override void OnMouseUp (MouseButtonEventArgs e) {
             if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
-            } else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
+            }
+            else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
                 mIsDrawing = false;
                 if (sCurrentShape == ShapeType.LINE) draw.End = mEnd;
             }
