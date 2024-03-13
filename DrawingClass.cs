@@ -5,6 +5,9 @@ using System.IO;
 using Brush = System.Windows.Media.Brush;
 using Pen = System.Windows.Media.Pen;
 using Point = System.Windows.Point;
+using static WpfAppAssignments.ShapeType;
+using System;
+using System.Windows.Controls;
 
 namespace WpfAppAssignments {
     #region Class Drawing -------------------------------------------------------------------------
@@ -54,7 +57,7 @@ namespace WpfAppAssignments {
     public class Scribble : Drawing {
         public List<Point> mWayPoints { get; set; }
         public Scribble (Pen pen) {
-            sType = ShapeType.SCRIBBLE;
+            sType = SCRIBBLE;
             currentPen = pen;
             mWayPoints = new ();
         }
@@ -95,7 +98,7 @@ namespace WpfAppAssignments {
     #region Class Rectangle -----------------------------------------------------------------------
     public class Rectangle : Drawing {
         public Rectangle (Pen pen) {
-            sType = ShapeType.RECTANGLE;
+            sType = RECTANGLE;
             currentPen = pen;
         }
         public double Width { get; set; }
@@ -103,7 +106,8 @@ namespace WpfAppAssignments {
         public override void DrawShape (DrawingContext drawingContext) {
             base.DrawShape (drawingContext);
             Rect getRect = new (Start, End);
-            drawingContext.DrawRectangle (null, currentPen, getRect);
+            if (End != new Point(0,0))
+                drawingContext.DrawRectangle (null, currentPen, getRect);
         }
     }
     #endregion
@@ -111,7 +115,7 @@ namespace WpfAppAssignments {
     #region Class Line ----------------------------------------------------------------------------
     public class Line : Drawing {
         public Line (Pen pen) {
-            sType = ShapeType.LINE;
+            sType = LINE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {
@@ -124,12 +128,14 @@ namespace WpfAppAssignments {
     #region Class Ellipse -------------------------------------------------------------------------
     public class Ellipse : Drawing {
         public Ellipse (Pen pen) {
-            sType = ShapeType.ELLIPSE;
+            sType = ELLIPSE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {
             base.DrawShape (drawingContext);
-            drawingContext.DrawEllipse (null, currentPen, Start, End.X, End.Y);
+            var X = Math.Abs (Start.X - End.X);
+            var Y = Math.Abs (Start.Y - End.Y);
+            drawingContext.DrawEllipse (null, currentPen, Start, X, Y);
         }
     }
     #endregion
@@ -137,12 +143,13 @@ namespace WpfAppAssignments {
     #region Class Circle --------------------------------------------------------------------------
     public class Circle : Drawing {
         public Circle (Pen pen) {
-            sType = ShapeType.CIRCLE;
+            sType = CIRCLE;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {
             base.DrawShape (drawingContext);
-            drawingContext.DrawEllipse (null, currentPen, Start, End.X, End.X);
+            var X = Math.Abs (Start.X - End.X);
+            drawingContext.DrawEllipse (null, currentPen, Start, X, X);
         }
     }
     #endregion
@@ -150,7 +157,7 @@ namespace WpfAppAssignments {
     #region Class PolyLines -----------------------------------------------------------------------
     public class PolyLines : Drawing {
         public PolyLines (Pen pen) {
-            sType = ShapeType.PLINES;
+            sType = PLINES;
             currentPen = pen;
         }
         public override void DrawShape (DrawingContext drawingContext) {

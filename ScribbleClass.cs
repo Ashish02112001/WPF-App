@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Input;
 using System.IO;
 using Microsoft.Win32;
+using static WpfAppAssignments.ShapeType;
+
 namespace WpfAppAssignments {
     #region Class ScribblePad ---------------------------------------------------------------------
     public partial class ScribblePad : Canvas {
@@ -53,12 +55,12 @@ namespace WpfAppAssignments {
         
         Drawing CreateShape (ShapeType st, Pen mPen) {
             draw = st switch {
-                ShapeType.SCRIBBLE => new Scribble (mPen),
-                ShapeType.LINE => new Line (mPen),
-                ShapeType.RECTANGLE => new Rectangle (mPen),
-                ShapeType.CIRCLE => new Circle (mPen),
-                ShapeType.ELLIPSE => new Ellipse (mPen),
-                ShapeType.PLINES => new PolyLines (mPen),
+                SCRIBBLE => new Scribble (mPen),
+                LINE => new Line (mPen),
+                RECTANGLE => new Rectangle (mPen),
+                CIRCLE => new Circle (mPen),
+                ELLIPSE => new Ellipse (mPen),
+                PLINES => new PolyLines (mPen),
                 _ => new Scribble (mPen)
             };
             return draw;
@@ -99,25 +101,27 @@ namespace WpfAppAssignments {
             base.OnMouseDown (e);
             mStart = e.GetPosition (this);
             Pen pen = new (sColor, 2);
-            if (sCurrentShape == ShapeType.PLINES && e.RightButton != MouseButtonState.Pressed) {
-                if (!mIsDrawing) {
-                    mIsDrawing = true;
-                    draw = new PolyLines (pen);
-                } else {
-                    if (draw != null) draw.End = mStart;
-                    draw = new PolyLines (pen);
+            if (sCurrentShape == PLINES) {
+                if (e.RightButton != MouseButtonState.Pressed) {
+                    if (!mIsDrawing) {
+                        mIsDrawing = true;
+                        draw = new PolyLines (pen);
+                    } else {
+                        if (draw != null) draw.End = mStart;
+                        draw = new PolyLines (pen);
+                    }
+                    draw.Start = mStart;
+                    sDrawings.Add (draw);
+                } else if (e.RightButton == MouseButtonState.Pressed) {
+                    if (mIsDrawing) sDrawings.Remove (sDrawings[^1]);
+                    mIsDrawing = false;
+                    InvalidateVisual ();
                 }
-                draw.Start = mStart;
-                sDrawings.Add (draw);
             }
-            else if (sCurrentShape == ShapeType.PLINES && e.RightButton == MouseButtonState.Pressed) {
-                if (mIsDrawing) sDrawings.Remove (sDrawings[^1]);
-                mIsDrawing = false;
-                InvalidateVisual ();
-            }
+            
             else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
-                if (sCurrentShape is ShapeType.SCRIBBLE) {
+                if (sCurrentShape is SCRIBBLE) {
                     mScribble = new (pen);
                     draw = null;
                     mScribble.AddWayPoints (mStart);
@@ -133,16 +137,13 @@ namespace WpfAppAssignments {
         protected override void OnMouseMove (MouseEventArgs e) {
             base.OnMouseMove (e);
             mEnd = e.GetPosition (this);
-            if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
+            if (sCurrentShape == PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
             }
             else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
-                if (sCurrentShape is ShapeType.SCRIBBLE) mScribble?.AddWayPoints (mEnd);
+                if (sCurrentShape is SCRIBBLE) mScribble?.AddWayPoints (mEnd);
                 else if (draw != null) {
-                    var X = Math.Abs (mStart.X - mEnd.X);
-                    var Y = Math.Abs (mStart.Y - mEnd.Y);
-                    draw.End = (sCurrentShape is ShapeType.ELLIPSE) ? new Point (X, Y) :
-                        (sCurrentShape is ShapeType.CIRCLE ? new Point (X,X) : mEnd);
+                    draw.End = mEnd;
                 }
             }
             mRedoStack.Clear ();
@@ -150,12 +151,12 @@ namespace WpfAppAssignments {
         }
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
-            if (sCurrentShape == ShapeType.PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
+            if (sCurrentShape == PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
             }
             else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
                 mIsDrawing = false;
-                if (sCurrentShape == ShapeType.LINE) draw.End = mEnd;
+                if (sCurrentShape == LINE) draw.End = mEnd;
             }
         }
         #endregion
@@ -167,7 +168,7 @@ namespace WpfAppAssignments {
         Point mStart, mEnd;
         static public List<Drawing> sDrawings = new ();
         Stack<Drawing> mRedoStack = new ();
-        static public ShapeType sCurrentShape = ShapeType.SCRIBBLE;
+        static public ShapeType sCurrentShape = SCRIBBLE;
         #endregion
     }
     #endregion
