@@ -39,8 +39,7 @@ namespace WpfAppAssignments {
                     var mPen = new Pen ();
                     while (true) {
                         if (br.PeekChar () == -1) break;
-                        ShapeType shapeType = (ShapeType)br.ReadInt32 ();
-                        draw = CreateShape (shapeType, mPen);
+                        draw = CreateShape ((ShapeType) br.ReadInt32 (), mPen);
                         if (draw == null) break;
                         sDrawings.Add (draw.LoadShape (br));
                         if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
@@ -55,7 +54,6 @@ namespace WpfAppAssignments {
         
         Drawing CreateShape (ShapeType st, Pen mPen) {
             draw = st switch {
-                SCRIBBLE => new Scribble (mPen),
                 LINE => new Line (mPen),
                 RECTANGLE => new Rectangle (mPen),
                 CIRCLE => new Circle (mPen),
@@ -142,21 +140,16 @@ namespace WpfAppAssignments {
             }
             else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 if (sCurrentShape is SCRIBBLE) mScribble?.AddWayPoints (mEnd);
-                else if (draw != null) {
-                    draw.End = mEnd;
-                }
+                else if (draw != null) draw.End = mEnd;
             }
             mRedoStack.Clear ();
             InvalidateVisual ();
         }
 
         protected override void OnMouseUp (MouseButtonEventArgs e) {
-            if (sCurrentShape == PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
-                if (draw != null) draw.End = mEnd;
-            }
-            else if (e.LeftButton == MouseButtonState.Released && mIsDrawing && draw != null) {
-                mIsDrawing = false;
-                if (sCurrentShape == LINE) draw.End = mEnd;
+            if (mIsDrawing && draw != null) {
+                draw.End = mEnd;
+                if (sCurrentShape != PLINES) mIsDrawing = false;
             }
         }
         #endregion

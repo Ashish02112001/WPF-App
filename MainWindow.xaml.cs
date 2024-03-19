@@ -24,12 +24,10 @@ namespace WpfAppAssignments {
 
         private void ButtonLoad (object sender, RoutedEventArgs e) {
             mScribble.Load ();
-            
         }
 
         private void ButtonSave (object sender, RoutedEventArgs e) {
             mScribble.Save ();
-            
         }
        
         private void ButtonUndo (object sender, RoutedEventArgs e) {
