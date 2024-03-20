@@ -11,6 +11,11 @@
     <None Remove="Icons\Green.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ClassLibrary\ClassLibrary.csproj" />
+  </ItemGroup>
+
+
 
   <ItemGroup>
     <Resource Include="Icons\Allclear.png" />

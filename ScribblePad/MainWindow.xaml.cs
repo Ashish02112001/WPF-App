@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using Microsoft.Win32;
+using ClassLibrary;
 
 namespace WpfAppAssignments {
     #region Class MainWindow ----------------------------------------------------------------------
@@ -15,9 +14,6 @@ namespace WpfAppAssignments {
 
         #region Implementations -------------------------------------
 
-        private void ClrChange (object sender, SelectionChangedEventArgs e) {
-            mScribble.ColorChange (mSelect.SelectedIndex);
-        }
         private void ButtonClear (object sender, RoutedEventArgs e) {
             mScribble.Clear ();
         }

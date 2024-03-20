@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows;
 using System.Windows.Input;
 using System.IO;
 using Microsoft.Win32;
-using static WpfAppAssignments.ShapeType;
+using ClassLibrary;
+using static ClassLibrary.ShapeType;
 
-namespace WpfAppAssignments {
+namespace WpfAppAssignments;
     #region Class ScribblePad ---------------------------------------------------------------------
     public partial class ScribblePad : Canvas {
-        Drawing? draw;
+        Sketch? draw;
         Scribble? mScribble;
         protected override void OnRender (DrawingContext drawingContext) {
             base.OnRender (drawingContext);
             foreach (var drawing in sDrawings) {
-                drawing.DrawShape (drawingContext);
+                RenderShapes.DrawShape (drawing, drawingContext);
             }
         }
         #region Methods ---------------------------------------------
@@ -25,7 +24,7 @@ namespace WpfAppAssignments {
             saveFile.Filter = "Binary files (*.bin)|*.bin";
             if (saveFile.ShowDialog () == true) {
                 BinaryWriter bw = new (File.Open (saveFile.FileName, FileMode.OpenOrCreate));
-                foreach (Drawing drawing in sDrawings) drawing.SaveShape (bw);
+                foreach (Sketch drawing in sDrawings) drawing.SaveShape (bw);
                 bw.Close ();
             }
         }
@@ -39,7 +38,7 @@ namespace WpfAppAssignments {
                     var mPen = new Pen ();
                     while (true) {
                         if (br.PeekChar () == -1) break;
-                        draw = CreateShape ((ShapeType) br.ReadInt32 (), mPen);
+                        draw = CreateShape ((ShapeType)br.ReadInt32 (), mPen);
                         if (draw == null) break;
                         sDrawings.Add (draw.LoadShape (br));
                         if (br.BaseStream.Position < br.BaseStream.Length) br.ReadChar ();
@@ -49,30 +48,18 @@ namespace WpfAppAssignments {
                 }
                 InvalidateVisual ();
             }
-
         }
-        
-        Drawing CreateShape (ShapeType st, Pen mPen) {
+
+        Sketch CreateShape (ShapeType st, Pen mPen) {
             draw = st switch {
-                LINE => new Line (mPen),
-                RECTANGLE => new Rectangle (mPen),
-                CIRCLE => new Circle (mPen),
-                ELLIPSE => new Ellipse (mPen),
-                PLINES => new PolyLines (mPen),
-                _ => new Scribble (mPen)
+                LINE => new Line (),
+                RECTANGLE => new Rectangle (),
+                CIRCLE => new Circle (),
+                ELLIPSE => new Ellipse (),
+                PLINES => new PolyLine (),
+                _ => new Scribble ()
             };
             return draw;
-        }
-        public void ColorChange (int choice) {
-            SolidColorBrush color = Brushes.White;
-            switch (choice) {
-                case 0: color = Brushes.White; break;
-                case 1: color = Brushes.Green; break;
-                case 2: color = Brushes.Orange; break;
-                case 3: color = Brushes.Red; break;
-                case 4: color = Brushes.Yellow; break;
-            }
-            sColor = color;
         }
         public void Clear () {
             sDrawings.Clear ();
@@ -97,16 +84,17 @@ namespace WpfAppAssignments {
         #region MouseEvents -----------------------------------------
         protected override void OnMouseDown (MouseButtonEventArgs e) {
             base.OnMouseDown (e);
-            mStart = e.GetPosition (this);
+            var point = e.GetPosition (this);
+            mStart = new Point2D (point.X, point.Y);
             Pen pen = new (sColor, 2);
             if (sCurrentShape == PLINES) {
                 if (e.RightButton != MouseButtonState.Pressed) {
                     if (!mIsDrawing) {
                         mIsDrawing = true;
-                        draw = new PolyLines (pen);
+                        draw = new PolyLine ();
                     } else {
                         if (draw != null) draw.End = mStart;
-                        draw = new PolyLines (pen);
+                        draw = new PolyLine ();
                     }
                     draw.Start = mStart;
                     sDrawings.Add (draw);
@@ -115,17 +103,14 @@ namespace WpfAppAssignments {
                     mIsDrawing = false;
                     InvalidateVisual ();
                 }
-            }
-            
-            else if (e.ButtonState == MouseButtonState.Pressed) {
+            } else if (e.ButtonState == MouseButtonState.Pressed) {
                 mIsDrawing = true;
                 if (sCurrentShape is SCRIBBLE) {
-                    mScribble = new (pen);
+                    mScribble = new ();
                     draw = null;
                     mScribble.AddWayPoints (mStart);
                     sDrawings.Add (mScribble);
-                }
-                else {
+                } else {
                     draw = CreateShape (sCurrentShape, pen);
                     draw.Start = mStart;
                     sDrawings.Add (draw);
@@ -134,11 +119,11 @@ namespace WpfAppAssignments {
         }
         protected override void OnMouseMove (MouseEventArgs e) {
             base.OnMouseMove (e);
-            mEnd = e.GetPosition (this);
+            var point = e.GetPosition (this);
+            mEnd = new Point2D (point.X, point.Y);
             if (sCurrentShape == PLINES && mIsDrawing && e.RightButton != MouseButtonState.Pressed) {
                 if (draw != null) draw.End = mEnd;
-            }
-            else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
+            } else if (mIsDrawing && e.LeftButton == MouseButtonState.Pressed) {
                 if (sCurrentShape is SCRIBBLE) mScribble?.AddWayPoints (mEnd);
                 else if (draw != null) draw.End = mEnd;
             }
@@ -158,11 +143,10 @@ namespace WpfAppAssignments {
         bool mIsDrawing = false, isLoaded = false;
         int loadCnt;
         static public SolidColorBrush? sColor = Brushes.White;
-        Point mStart, mEnd;
-        static public List<Drawing> sDrawings = new ();
-        Stack<Drawing> mRedoStack = new ();
+        Point2D mStart, mEnd;
+        static public List<Sketch> sDrawings = new ();
+        Stack<Sketch> mRedoStack = new ();
         static public ShapeType sCurrentShape = SCRIBBLE;
         #endregion
     }
     #endregion
-}
