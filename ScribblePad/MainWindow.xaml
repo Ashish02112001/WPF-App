@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfAppAssignments"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800" Background="Transparent">
+        Title="{Binding sName}" Name="mWindow" Height="450" Width="800" Background="Transparent">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="45"/>

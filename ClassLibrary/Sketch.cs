@@ -3,6 +3,7 @@
 namespace ClassLibrary {
     public class Sketch {
         #region Properties ------------------------------------------
+        public List<Point2D>? mWayPoints { get; set; }
         public ShapeType sType { get; set; }
         public Point2D Start { get; set; }
         public Point2D End { get; set; }

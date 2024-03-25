@@ -9,6 +9,7 @@ namespace WpfAppAssignments {
         #region Constructor -----------------------------------------
         public MainWindow () {
             InitializeComponent ();
+            Title = DocManager.Name;
         }
         #endregion
 
@@ -19,13 +20,15 @@ namespace WpfAppAssignments {
         }
 
         private void ButtonLoad (object sender, RoutedEventArgs e) {
-            mScribble.Load ();
+            mScribble.LoadSketch ();
+            Title = DocManager.Name;
         }
 
         private void ButtonSave (object sender, RoutedEventArgs e) {
-            mScribble.Save ();
+            mScribble.SaveSketch ();
+            Title = DocManager.Name;
         }
-       
+
         private void ButtonUndo (object sender, RoutedEventArgs e) {
             mScribble.OnClickUndo ();
         }

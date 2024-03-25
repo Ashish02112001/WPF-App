@@ -6,16 +6,16 @@ using static ClassLibrary.ShapeType;
 
 namespace WpfAppAssignments {
     #region Class RenderShapes --------------------------------------------------------------------
-    public class RenderShapes : Sketch {
+    public class DrawSketch : Sketch {
         public static void DrawShape (Sketch sketch, DrawingContext dc) {
             var currentPen = new Pen (Brushes.White, 2);
             Point point (Point2D pt) => new (pt.X, pt.Y);
-            var ptList = ClassLibrary.Scribble.mWayPoints;
             switch (sketch.sType) {
                 case SCRIBBLE:
+                    var ptList = sketch.mWayPoints;
                     if (ptList?.Count > 1) {
                         for (int i = 0; i < ptList?.Count - 1; i++) {
-                            var start = ptList[i];
+                            var start = ptList![i];
                             var end = ptList[i + 1];
                             dc.DrawLine (currentPen, point(start), point(end));
                         }
