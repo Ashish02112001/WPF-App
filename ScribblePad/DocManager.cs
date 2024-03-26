@@ -22,6 +22,7 @@ namespace WpfAppAssignments {
                 bw.Close ();
                 Name = saveFile.SafeFileName;
             }
+            mIsModified = false;
         }
         public int Count () => mDrawings!.Count;
         public Sketch Load () {
@@ -49,8 +50,8 @@ namespace WpfAppAssignments {
             return sketch!;
         }
         public static bool sIsLoaded;
-        public bool mIsModified;
         public static int sLoadCnt;
+        public bool mIsModified;
         public Stack<Sketch>? mRedoStack;
         public List<Sketch>? mDrawings;
     }

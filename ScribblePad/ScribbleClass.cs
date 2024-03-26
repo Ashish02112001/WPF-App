@@ -64,7 +64,7 @@ public partial class ScribblePad : Canvas {
             if (window.GetType () == typeof (MainWindow)) {
                 var mW = window as MainWindow;
                 if (mNewDoc.Count () == 0 || (IsLoaded && mNewDoc.Count () >= sLoadCnt)) {
-                    if (!mW!.Title.Contains ('*')) mW!.Title += "*";
+                    if (!mW!.Title.Contains ('*')) { mW!.Title += "*"; mNewDoc.mIsModified = true; }
                 }
             }
         }
